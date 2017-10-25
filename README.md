@@ -1,6 +1,6 @@
 # QuantumHallED (QHED)
 
-A Julia code for performing exact diagonalization of quantum Hall systems, i.e., interacting electrons moving in two spatial dimensions in the presence of a strong perpendicular magnetic field. Currently the code supports only the spherical geometry, as introduced in the classic paper by Haldane \[[PRL **51**, 605 (1983)](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.51.605)\].
+A Julia code (built on Julia v0.6.0) for performing exact diagonalization of quantum Hall systems, i.e., interacting electrons moving in two spatial dimensions in the presence of a strong perpendicular magnetic field. Currently the code supports only the spherical geometry, as introduced in the classic paper by Haldane \[[PRL **51**, 605 (1983)](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.51.605)\].
 
 Included are a few Jupyter [notebooks](https://github.com/mishmash/QuantumHallED/tree/master/notebooks) demonstrating usage:
 * [sphere-ED.ipynb](https://github.com/mishmash/QuantumHallED/blob/master/notebooks/sphere-ED.ipynb): various examples of basic usage.
