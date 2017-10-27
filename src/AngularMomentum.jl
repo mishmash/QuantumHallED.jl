@@ -4,8 +4,8 @@ using JLD
 # @pyimport sympy.physics.quantum.cg as cg
 @pyimport sympy.physics.wigner as wigner
 
-AngMom = Union{Int, Float64}
-AngMomVector = Union{Vector{Int}, Vector{Float64}} # unfortunately this seems to be necessary
+const AngMom = Union{Int, Float64}
+const AngMomVector = Union{Vector{Int}, Vector{Float64}} # unfortunately this seems to be necessary
 isangmom(q::AngMom) = isinteger(2q)
 isangmom(qs::AngMomVector) = all(isinteger, 2qs)
 
