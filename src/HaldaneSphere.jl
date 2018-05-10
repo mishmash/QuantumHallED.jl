@@ -190,13 +190,11 @@ get_ell(setup::HaldaneSphereSetupLLL) = get_ell(setup.states)
 
 dim(setup::HaldaneSphereSetupLLL) = dim(setup.states)
 
-Lqn(v) = 0.5 * (-1 + sqrt(1 + 4v)) # v = L * (L + 1)
-
 function eig_Lsquared(Lsquared::SparseMatrixCSC{Float64, Int64})
-    @assert size(Lsquared)[1] == size(Lsquared)[2]
+    @assert ishermitian(Lsquared)
     println("Diagonalizing L^2 matrix of size $(size(Lsquared)[1]) x $(size(Lsquared)[2]) with eig ...")
     tic()
-    evals, evecs = eig(full(Lsquared))
+    evals, evecs = eig(Hermitian(full(Lsquared)))
     toc()
     println()
     return Lqn(evals), evecs
@@ -206,16 +204,16 @@ eig_Lsquared(setup::HaldaneSphereSetupLLL) = eig_Lsquared(setup.Lsquared)
 
 # eigs on Lsquared is sketchy; use with caution..
 function eigs_Lsquared(Lsquared::SparseMatrixCSC{Float64, Int64}, nev::Int)
-    @assert size(Lsquared)[1] == size(Lsquared)[2]
+    @assert ishermitian(Lsquared)
     println("Diagonalizing L^2 matrix of size $(size(Lsquared)[1]) x $(size(Lsquared)[2]) with eigs, nev = $(nev) ...")
     tic()
-    evals, evecs = eigs(Lsquared; which=:SR, nev=nev)
+    evals, evecs = eigs(Lsquared, which=:SR, nev=nev)
     toc()
     println()
     return Lqn(evals), evecs
 end
 
-eigs_Lsquared(setup::HaldaneSphereSetupLLL) = eigs_Lsquared(setup.Lsquared)
+eigs_Lsquared(setup::HaldaneSphereSetupLLL, nev::Int) = eigs_Lsquared(setup.Lsquared, nev)
 
 
 abstract type HaldaneSphereHami end
@@ -322,18 +320,20 @@ get_ell(Hami::HaldaneSphereHamiLLL) = get_ell(Hami.setup)
 dim(Hami::HaldaneSphereHamiLLL) = dim(Hami.setup)
 
 function eig!(Hami::HaldaneSphereHamiLLL)
+    @assert ishermitian(Hami.H)
     println("Diagonalizing Hami of size $(dim(Hami)) x $(dim(Hami)) with eig ...")
     tic()
-    Hami.energies, Hami.eigenstates = eig(full(Hami.H))
+    Hami.energies, Hami.eigenstates = eig(Hermitian(full(Hami.H)))
     toc()
     println()
     return Hami.energies, Hami.eigenstates
 end
 
 function eigs!(Hami::HaldaneSphereHamiLLL, nev::Int)
+    @assert ishermitian(Hami.H)
     println("Diagonalizing Hami of size $(dim(Hami)) x $(dim(Hami)) with eigs, nev = $(nev) ...")
     tic()
-    Hami.energies, Hami.eigenstates = eigs(Hami.H; which=:SR, nev=nev)
+    Hami.energies, Hami.eigenstates = eigs(Hami.H, which=:SR, nev=nev)
     toc()
     println()
     return Hami.energies, Hami.eigenstates
@@ -344,7 +344,7 @@ function organize_spectrum!(Hami::HaldaneSphereHamiLLL)
     tic()
     Hami.spectrum = zeros(Float64, (length(Hami.energies), 2))
     for j in 1:length(Hami.energies)
-        Hami.spectrum[j, 1] = Lqn((Hami.eigenstates[:, j]' * Hami.setup.Lsquared * Hami.eigenstates[:, j])[1])
+        Hami.spectrum[j, 1] = Lqn(Hami.eigenstates[:, j]' * Hami.setup.Lsquared * Hami.eigenstates[:, j])
         Hami.spectrum[j, 2] = Hami.energies[j]
     end
     toc()
@@ -355,6 +355,8 @@ end
 
 function entanglement_spectrum{T}(psi::Vector{T}, states::HaldaneSphereStatesListLLL, subsystemA::Vector{Int}, NA::Int, LzAvec::Vector{Float64})
     @assert length(psi) == dim(states)
+
+    psi /= norm(psi) # normalize the wf
 
     IAlist = zeros(Int, length(psi))
     NAlist = zeros(Int, length(psi))
@@ -458,7 +460,7 @@ function four_point_corrs{T}(psi::Vector{T}, states::HaldaneSphereStatesListLLL)
             for alpha1 in 1:Norb
                 for alpha2 in 1:alpha1-1
                     if alpha1p + alpha2p == alpha1 + alpha2 # Lz conservation [mz = alpha - (Q + 1) = alpha + const.]
-                        corr_mat[alpha1p, alpha2p, alpha1, alpha2] = psi' * four_point_operator(states, alpha1p, alpha2p, alpha1, alpha2) * psi
+                        corr_mat[alpha1p, alpha2p, alpha1, alpha2] = (psi' * four_point_operator(states, alpha1p, alpha2p, alpha1, alpha2) * psi) / (psi' * psi)
                     end
                 end
             end
@@ -526,7 +528,7 @@ end
 # returns r/ell0 and g as column vectors
 function pair_correlation_function_equator_gc(psi::Vector, states::HaldaneSphereStatesListLLL; pts::Int = 200, frac::Float64 = 0.5)
     ϕ = linspace(0, frac * 2pi, pts)
-    g = pair_correlation_function(psi, setup.states,
+    g = pair_correlation_function(psi, states,
                                   fill(pi/2, length(ϕ)),
                                   collect(ϕ),
                                   fill(pi/2, length(ϕ)),

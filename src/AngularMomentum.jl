@@ -19,6 +19,8 @@ CG(j1, m1, j2, m2, j3, m3) = (wigner.clebsch_gordan(j1, j2, j3, m1, m2, m3)[:doi
 Wigner3j(j1, j2, j3, m1, m2, m3) = (wigner.wigner_3j(j1, j2, j3, m1, m2, m3)[:doit]() |> float)
 Wigner6j(j1, j2, j3, j4, j5, j6) = (wigner.wigner_6j(j1, j2, j3, j4, j5, j6)[:doit]() |> float)
 
+Lqn(v) = 0.5 * (-1 + sqrt.(1 + 4v)) # v = L * (L + 1)
+
 function build_CG_table(ell1::AngMom, ell2::AngMom)
     @assert isangmom(ell1)
     @assert isangmom(ell2)
